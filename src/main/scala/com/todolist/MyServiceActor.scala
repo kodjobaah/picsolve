@@ -3,9 +3,11 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
+import com.todolist.domain.MyToDoItem
+import com.todolist.service.{CreateTodoItem, ToDoItemsActor}
 import spray.http.StatusCodes
 import spray.routing.HttpService
-
+import akka.pattern.ask
 import scala.concurrent.ExecutionContext
 
 
@@ -32,16 +34,22 @@ trait MyService extends HttpService  {
 
   val toDoListActorSystem = ActorSystem("on-todo-list")
 
+  val todoList = toDoListActorSystem.actorOf(Props[ToDoItemsActor], "todolist-actor")
+
   import ExecutionContext.Implicits.global
   import spray.util._
+  import com.todolist.ToDoItemJsonSupport._
   implicit val timeout = new Timeout(2, TimeUnit.SECONDS)
   val myRoute =
 
     path("todolist") {
       post {
         respondWithStatus(StatusCodes.Created) {
-            complete("yes")
+          handleWith { myToDoItem: MyToDoItem =>
+            (todoList ? CreateTodoItem(myToDoItem)).mapTo[MyToDoItem]
+
           }
         }
+      }
     }
 }

@@ -10,7 +10,7 @@ import akka.pattern.ask
 /**
  * Created by kodjobaah on 26/11/2015.
  */
-class Boot extends App {
+object Boot extends App {
 
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("on-spray-can")
