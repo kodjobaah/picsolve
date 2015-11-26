@@ -13,6 +13,7 @@ import scala.concurrent.Await
 
 
 case class CreateTodoItem(todoItem: MyToDoItem)
+case class GetToDoItems()
 
 class ToDoItemsActor extends Actor with TodoActions {
 
@@ -21,6 +22,8 @@ class ToDoItemsActor extends Actor with TodoActions {
     case CreateTodoItem(todoItem) =>
       sender ! createTodoItem(todoItem)
 
+    case GetToDoItems =>
+      sender ! getToDoItems()
   }
 }
 
@@ -29,6 +32,19 @@ import slick.driver.MySQLDriver.api._
 import DatabaseCfg._
 
 trait TodoActions {
+
+  def getToDoItems(): List[MyToDoItem] = {
+
+    var result:List[MyToDoItem] = List()
+    var res = for {
+      it <- items
+    } yield (it)
+
+    var resp = db.run(res.result)
+
+    var out = Await.result(resp,3 seconds)
+    out.toList
+  }
 
   def createTodoItem(todoitem: MyToDoItem): MyToDoItem = {
 

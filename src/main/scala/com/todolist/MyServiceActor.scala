@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
 import com.todolist.domain.MyToDoItem
-import com.todolist.service.{CreateTodoItem, ToDoItemsActor}
+import com.todolist.service.{GetToDoItems, CreateTodoItem, ToDoItemsActor}
 import spray.http.StatusCodes
 import spray.routing.HttpService
 import akka.pattern.ask
@@ -51,5 +51,12 @@ trait MyService extends HttpService  {
           }
         }
       }
-    }
+    } ~
+      path("todolist" / "list") {
+        get {
+          complete {
+            (todoList ? GetToDoItems).mapTo[List[MyToDoItem]]
+          }
+        }
+      }
 }
