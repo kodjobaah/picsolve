@@ -15,6 +15,7 @@ import scala.concurrent.Await
 case class CreateTodoItem(todoItem: MyToDoItem)
 case class GetToDoItems()
 case class MarkDone(id: Long, state: Boolean)
+case class DeleteItem(id: Long)
 
 class ToDoItemsActor extends Actor with TodoActions {
 
@@ -28,6 +29,9 @@ class ToDoItemsActor extends Actor with TodoActions {
 
     case MarkDone(itemId,state) =>
       sender ! markItemDone(itemId,state)
+
+    case DeleteItem(itemId) =>
+       deleteItem(itemId)
   }
 }
 
@@ -37,6 +41,17 @@ import DatabaseCfg._
 
 trait TodoActions {
 
+  def deleteById(itemId: Rep[Long]) = {
+    items.filter(_.id === itemId)
+  }
+
+  val deleteByIdCompiled = Compiled(deleteById _)
+
+  def deleteItem(itemId: Long) = {
+    val action = deleteByIdCompiled(itemId).delete
+    db.run(action)
+    itemId
+  }
   def findItemById(itemId: Rep[Long]) = {
 
      for {

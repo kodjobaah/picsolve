@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
 import com.todolist.domain.MyToDoItem
-import com.todolist.service.{MarkDone, GetToDoItems, CreateTodoItem, ToDoItemsActor}
+import com.todolist.service._
 import spray.http.StatusCodes
 import spray.routing.HttpService
 import akka.pattern.ask
@@ -79,5 +79,15 @@ trait MyService extends HttpService  {
             }
           }
         }
+      }~
+        path("todolist" / "delete" / LongNumber) { itemId =>
+      post {
+
+        val deleteItem = DeleteItem(itemId)
+        todoList ! deleteItem
+        respondWithStatus(StatusCodes.Accepted) {
+          complete("")
+        }
       }
+    }
 }

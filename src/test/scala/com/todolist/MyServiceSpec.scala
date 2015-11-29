@@ -65,12 +65,12 @@ class MyServiceSpec extends Specification with Specs2RouteTest with HttpService 
           }
 
         todo = Option(responseAs[MyToDoItem])
-      }
 
-      todo must not equalTo(None)
-      item.id must equalTo(todo.get.id)
-      initialState must equalTo(false)
-      todo.get.isDone must equalTo(true)
+        todo must not equalTo(None)
+        item.id must equalTo(todo.get.id)
+        initialState must equalTo(false)
+        todo.get.isDone must equalTo(true)
+      }
     }
 
     "Given an item use /todolist/marknotdone/id then set state to not done" in {
@@ -89,12 +89,25 @@ class MyServiceSpec extends Specification with Specs2RouteTest with HttpService 
           }
 
         todo = Option(responseAs[MyToDoItem])
+        todo must not equalTo(None)
+        item.id must equalTo(todo.get.id)
+        initialState must equalTo(true)
+        todo.get.isDone must equalTo(false)
       }
 
-      todo must not equalTo(None)
-      item.id must equalTo(todo.get.id)
-      initialState must equalTo(true)
-      todo.get.isDone must equalTo(false)
+
+    }
+
+    "Given an item use /todolist/delete/id to delete the item" in {
+
+      val item = MyServiceHelper.createToDoItem()
+      val initialState = item.isDone
+
+      var todo: Option[MyToDoItem] = None
+
+      Post("/todolist/delete/"+item.id) ~> myRoute ~> check {
+        status must be(Accepted)
+      }
     }
   }
 
