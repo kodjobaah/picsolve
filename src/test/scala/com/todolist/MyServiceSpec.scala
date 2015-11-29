@@ -7,6 +7,7 @@ import spray.http.{HttpCharsets, HttpEntity, MediaTypes, ContentTypes}
 import spray.http.StatusCodes._
 import spray.httpx.marshalling.Marshaller
 import spray.httpx.unmarshalling.Unmarshaller
+import spray.json._
 import spray.routing.HttpService
 import spray.testkit.Specs2RouteTest
 
@@ -16,11 +17,13 @@ import spray.testkit.Specs2RouteTest
 class MyServiceSpec extends Specification with Specs2RouteTest with HttpService with MyService {
 
 
+  import com.todolist.ToDoItemJsonSupport._
+  import spray.json._
+
   "when this service is called" should {
     "save an item when /todolist is supplied with appropriate json object" in {
 
-      import com.todolist.ToDoItemJsonSupport._
-      import spray.json._
+
       implicit def sprayJsonMarshaller[T](implicit writer: RootJsonWriter[T], printer: JsonPrinter = PrettyPrinter) =
         Marshaller.delegate[T, String](ContentTypes.`application/json`) { value ⇒
           val json = writer.write(value)
@@ -44,6 +47,31 @@ class MyServiceSpec extends Specification with Specs2RouteTest with HttpService 
         status must be(Created)
       }
 
+    }
+
+    "Given an item in /todolist/markdone/id then set state to done" in {
+
+      val item = MyServiceHelper.createToDoItem()
+      val initialState = item.isDone
+      var newState = false
+
+      var todo: Option[MyToDoItem] = None
+
+      Post("/todolist/markdone/"+item.id) ~> myRoute ~> check {
+        implicit def sprayJsonUnmarshaller[T: RootJsonReader] =
+          Unmarshaller[T](MediaTypes.`application/json`) {
+            case x: HttpEntity.NonEmpty ⇒
+              val json = JsonParser(x.asString(defaultCharset = HttpCharsets.`UTF-8`))
+              jsonReader[T].read(json)
+          }
+
+        todo = Option(responseAs[MyToDoItem])
+      }
+
+      todo must not equalTo(None)
+      item.id must equalTo(todo.get.id)
+      initialState must equalTo(false)
+      todo.get.isDone must equalTo(true)
     }
   }
 

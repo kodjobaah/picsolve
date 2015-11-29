@@ -8,6 +8,7 @@ import slick.driver.MySQLDriver.api._
 case class MyToDoItem(id: Long = -1 , priority:Int, description: String, isDone: Boolean = false) extends TodoItem
 
 
+
 class Items(tag: Tag) extends Table[MyToDoItem](tag,"ToDoItem") {
   def id = column[Long] ("id",O.PrimaryKey, O.AutoInc)
   def priority = column[Int]("priority")
@@ -15,4 +16,6 @@ class Items(tag: Tag) extends Table[MyToDoItem](tag,"ToDoItem") {
   def isDone = column[Boolean]("isDone")
   def * = (id,priority,description,isDone) <> (MyToDoItem.tupled, MyToDoItem.unapply)
 }
+
+
 

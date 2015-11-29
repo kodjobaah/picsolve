@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
 import com.todolist.domain.MyToDoItem
-import com.todolist.service.{GetToDoItems, CreateTodoItem, ToDoItemsActor}
+import com.todolist.service.{MarkDone, GetToDoItems, CreateTodoItem, ToDoItemsActor}
 import spray.http.StatusCodes
 import spray.routing.HttpService
 import akka.pattern.ask
@@ -58,5 +58,16 @@ trait MyService extends HttpService  {
             (todoList ? GetToDoItems).mapTo[List[MyToDoItem]]
           }
         }
-      }
+      } ~
+     path("todolist" / "markdone" / LongNumber) { itemId =>
+       post {
+         println("itemId:"+itemId)
+         respondWithStatus(StatusCodes.Accepted) {
+           complete {
+             val markDone = MarkDone(itemId)
+             (todoList ? markDone).mapTo[MyToDoItem]
+           }
+         }
+       }
+     }
 }

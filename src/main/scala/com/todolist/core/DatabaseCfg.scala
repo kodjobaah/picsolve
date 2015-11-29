@@ -1,7 +1,6 @@
 package com.todolist.core
 
-import com.todolist.domain.Items
-import com.todolist.domain.{ Items }
+import com.todolist.domain.{Coffees, Items}
 
 import slick.jdbc.meta.MTable
 import slick.lifted.TableQuery
@@ -22,8 +21,6 @@ object DatabaseCfg {
 
   // the base query for the Users table
   val items = TableQuery[Items]
-
-
   def init() = {
 
 

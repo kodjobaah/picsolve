@@ -14,6 +14,7 @@ import scala.concurrent.Await
 
 case class CreateTodoItem(todoItem: MyToDoItem)
 case class GetToDoItems()
+case class MarkDone(id: Long)
 
 class ToDoItemsActor extends Actor with TodoActions {
 
@@ -24,6 +25,9 @@ class ToDoItemsActor extends Actor with TodoActions {
 
     case GetToDoItems =>
       sender ! getToDoItems()
+
+    case MarkDone(itemId) =>
+      sender ! markItemDone(itemId)
   }
 }
 
@@ -33,17 +37,65 @@ import DatabaseCfg._
 
 trait TodoActions {
 
+  def findItemById(itemId: Rep[Long]) = {
+
+     for {
+        item <- items if item.id === itemId
+     } yield item
+  }
+
+  def markItemAsDone(itemId: Rep[Long]) = {
+
+    for {
+      item <- items if item.id === itemId
+    } yield item.isDone
+
+
+  }
+  val findItemByIdCompiled = Compiled(findItemById _)
+
+  val markItemAsDoneCompiled = Compiled(markItemAsDone _)
+
+  def markItemDone(itemId: Long): MyToDoItem = {
+
+    val markDone = markItemAsDone(itemId).update(true)
+
+    var resp = db.run(markDone)
+    var out = Await.result(resp,3 seconds)
+    val itemToUpdate = findItemByIdCompiled(itemId).result
+    val outItem = Await.result(db.run(itemToUpdate), 3 seconds).asInstanceOf[Vector[MyToDoItem]].head.asInstanceOf[MyToDoItem]
+    outItem
+
+  }
   def getToDoItems(): List[MyToDoItem] = {
+
+    import scala.concurrent.ExecutionContext.Implicits.global
 
     var result:List[MyToDoItem] = List()
     var res = for {
       it <- items
     } yield (it)
 
-    var resp = db.run(res.result)
+    /*
 
-    var out = Await.result(resp,3 seconds)
+import slick.backend.DatabasePublisher
+val a = res.result
+val p: DatabasePublisher[MyToDoItem] = db.stream(a)
+
+var out:List[MyToDoItem] = List()
+
+p.foreach { s =>
+  println("inside:"+s)
+  out = out :+ s
+}
+*/
+
+var resp = db.run(res.result)
+
+var out = Await.result(resp,3 seconds)
+    println("outside:")
     out.toList
+
   }
 
   def createTodoItem(todoitem: MyToDoItem): MyToDoItem = {
