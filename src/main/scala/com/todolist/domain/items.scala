@@ -5,7 +5,9 @@ import slick.driver.MySQLDriver.api._
 /**
  * Created by kodjobaah on 26/11/2015.
  */
-case class MyToDoItem(id: Long = -1 , priority:Int, description: String, isDone: Boolean = false) extends TodoItem
+case class MyToDoItem(id: Long = -1 , priority:Int, description: String, isDone: Boolean = false) extends TodoItem {
+   require(priority >= 1 && priority <= 5)
+}
 
 
 

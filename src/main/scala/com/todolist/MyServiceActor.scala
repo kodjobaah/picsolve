@@ -48,7 +48,6 @@ trait MyService extends HttpService {
         respondWithStatus(StatusCodes.Created) {
           handleWith { myToDoItem: MyToDoItem =>
             (todoList ? CreateTodoItem(myToDoItem)).mapTo[MyToDoItem]
-
           }
         }
       }
@@ -98,15 +97,17 @@ trait MyService extends HttpService {
 
             val st = status.toBoolean
             val prt = priority.toInt
-            val filteredList = FilteredList(st,prt)
-            complete {
-              (todoList ? filteredList).mapTo[List[MyToDoItem]]
+            validate(prt <= 5 && prt >= 1, s"Priority has to be greater than 1 and less than 5") {
+              val filteredList = FilteredList(st, prt)
+              complete {
+                (todoList ? filteredList).mapTo[List[MyToDoItem]]
+              }
             }
 
           } catch {
             case e: Exception => {
-              respondWithStatus(StatusCodes.NotAcceptable) {
-                complete("")
+              respondWithStatus(StatusCodes.BadRequest) {
+                complete("status is either true or false and priority is a number between 1 and 5")
               }
 
             }
