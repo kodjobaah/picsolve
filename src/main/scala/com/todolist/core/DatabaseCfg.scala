@@ -1,6 +1,6 @@
 package com.todolist.core
 
-import com.todolist.domain.{Coffees, Items}
+import com.todolist.domain.{Items}
 
 import slick.jdbc.meta.MTable
 import slick.lifted.TableQuery

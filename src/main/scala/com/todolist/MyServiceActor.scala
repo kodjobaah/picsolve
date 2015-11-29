@@ -61,13 +61,23 @@ trait MyService extends HttpService  {
       } ~
      path("todolist" / "markdone" / LongNumber) { itemId =>
        post {
-         println("itemId:"+itemId)
          respondWithStatus(StatusCodes.Accepted) {
            complete {
-             val markDone = MarkDone(itemId)
+             val markDone = MarkDone(itemId,true)
              (todoList ? markDone).mapTo[MyToDoItem]
            }
          }
        }
-     }
+     }~
+      path("todolist" / "marknotdone" / LongNumber) { itemId =>
+        post {
+
+          respondWithStatus(StatusCodes.Accepted) {
+            complete {
+              val markDone = MarkDone(itemId,false)
+              (todoList ? markDone).mapTo[MyToDoItem]
+            }
+          }
+        }
+      }
 }

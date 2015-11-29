@@ -14,7 +14,7 @@ import scala.concurrent.Await
 
 case class CreateTodoItem(todoItem: MyToDoItem)
 case class GetToDoItems()
-case class MarkDone(id: Long)
+case class MarkDone(id: Long, state: Boolean)
 
 class ToDoItemsActor extends Actor with TodoActions {
 
@@ -26,8 +26,8 @@ class ToDoItemsActor extends Actor with TodoActions {
     case GetToDoItems =>
       sender ! getToDoItems()
 
-    case MarkDone(itemId) =>
-      sender ! markItemDone(itemId)
+    case MarkDone(itemId,state) =>
+      sender ! markItemDone(itemId,state)
   }
 }
 
@@ -56,9 +56,9 @@ trait TodoActions {
 
   val markItemAsDoneCompiled = Compiled(markItemAsDone _)
 
-  def markItemDone(itemId: Long): MyToDoItem = {
+  def markItemDone(itemId: Long, state: Boolean): MyToDoItem = {
 
-    val markDone = markItemAsDone(itemId).update(true)
+    val markDone = markItemAsDone(itemId).update(state)
 
     var resp = db.run(markDone)
     var out = Await.result(resp,3 seconds)

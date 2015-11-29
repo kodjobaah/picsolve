@@ -49,11 +49,10 @@ class MyServiceSpec extends Specification with Specs2RouteTest with HttpService 
 
     }
 
-    "Given an item in /todolist/markdone/id then set state to done" in {
+    "Given an item use /todolist/markdone/id then set state to done" in {
 
       val item = MyServiceHelper.createToDoItem()
       val initialState = item.isDone
-      var newState = false
 
       var todo: Option[MyToDoItem] = None
 
@@ -72,6 +71,30 @@ class MyServiceSpec extends Specification with Specs2RouteTest with HttpService 
       item.id must equalTo(todo.get.id)
       initialState must equalTo(false)
       todo.get.isDone must equalTo(true)
+    }
+
+    "Given an item use /todolist/marknotdone/id then set state to not done" in {
+
+      val item = MyServiceHelper.createItemAndMarkAsDone()
+      val initialState = item.isDone
+
+      var todo: Option[MyToDoItem] = None
+
+      Post("/todolist/marknotdone/"+item.id) ~> myRoute ~> check {
+        implicit def sprayJsonUnmarshaller[T: RootJsonReader] =
+          Unmarshaller[T](MediaTypes.`application/json`) {
+            case x: HttpEntity.NonEmpty ⇒
+              val json = JsonParser(x.asString(defaultCharset = HttpCharsets.`UTF-8`))
+              jsonReader[T].read(json)
+          }
+
+        todo = Option(responseAs[MyToDoItem])
+      }
+
+      todo must not equalTo(None)
+      item.id must equalTo(todo.get.id)
+      initialState must equalTo(true)
+      todo.get.isDone must equalTo(false)
     }
   }
 
