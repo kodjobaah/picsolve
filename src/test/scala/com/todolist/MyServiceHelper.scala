@@ -21,7 +21,8 @@ class MyServiceHelper  extends Specification with Specs2RouteTest with HttpServi
   import spray.json._
 
   def createToDoItem(): MyToDoItem = {
-     var item: MyToDoItem = MyToDoItem(priority=1, description = "testing the value for update")
+    val r = scala.util.Random
+     var item: MyToDoItem = MyToDoItem(priority=r.nextInt(5), description = "testing the value for update")
 
     implicit def sprayJsonMarshaller[T](implicit writer: RootJsonWriter[T], printer: JsonPrinter = PrettyPrinter) =
       Marshaller.delegate[T, String](ContentTypes.`application/json`) { value ⇒

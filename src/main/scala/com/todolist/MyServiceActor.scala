@@ -30,7 +30,7 @@ def receive = runRoute(myRoute)
 
 
 // this trait defines our service behavior independently from the service actor
-trait MyService extends HttpService  {
+trait MyService extends HttpService {
 
   val toDoListActorSystem = ActorSystem("on-todo-list")
 
@@ -39,6 +39,7 @@ trait MyService extends HttpService  {
   import ExecutionContext.Implicits.global
   import spray.util._
   import com.todolist.ToDoItemJsonSupport._
+
   implicit val timeout = new Timeout(2, TimeUnit.SECONDS)
   val myRoute =
 
@@ -59,35 +60,58 @@ trait MyService extends HttpService  {
           }
         }
       } ~
-     path("todolist" / "markdone" / LongNumber) { itemId =>
-       post {
-         respondWithStatus(StatusCodes.Accepted) {
-           complete {
-             val markDone = MarkDone(itemId,true)
-             (todoList ? markDone).mapTo[MyToDoItem]
-           }
-         }
-       }
-     }~
+      path("todolist" / "markdone" / LongNumber) { itemId =>
+        post {
+          respondWithStatus(StatusCodes.Accepted) {
+            complete {
+              val markDone = MarkDone(itemId, true)
+              (todoList ? markDone).mapTo[MyToDoItem]
+            }
+          }
+        }
+      } ~
       path("todolist" / "marknotdone" / LongNumber) { itemId =>
         post {
 
           respondWithStatus(StatusCodes.Accepted) {
             complete {
-              val markDone = MarkDone(itemId,false)
+              val markDone = MarkDone(itemId, false)
               (todoList ? markDone).mapTo[MyToDoItem]
             }
           }
         }
-      }~
-        path("todolist" / "delete" / LongNumber) { itemId =>
-      post {
+      } ~
+      path("todolist" / "delete" / LongNumber) { itemId =>
+        post {
 
-        val deleteItem = DeleteItem(itemId)
-        todoList ! deleteItem
-        respondWithStatus(StatusCodes.Accepted) {
-          complete("")
+          val deleteItem = DeleteItem(itemId)
+          todoList ! deleteItem
+          respondWithStatus(StatusCodes.Accepted) {
+            complete("")
+          }
+        }
+      }~
+      path("todolist" / "status" / Segment / "priority" / Segment) { (status: String,priority: String)  =>
+        get {
+
+          try {
+
+            val st = status.toBoolean
+            val prt = priority.toInt
+            val filteredList = FilteredList(st,prt)
+            complete {
+              (todoList ? filteredList).mapTo[List[MyToDoItem]]
+            }
+
+          } catch {
+            case e: Exception => {
+              respondWithStatus(StatusCodes.NotAcceptable) {
+                complete("")
+              }
+
+            }
+
+          }
         }
       }
-    }
 }

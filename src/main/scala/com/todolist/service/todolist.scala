@@ -16,6 +16,7 @@ case class CreateTodoItem(todoItem: MyToDoItem)
 case class GetToDoItems()
 case class MarkDone(id: Long, state: Boolean)
 case class DeleteItem(id: Long)
+case class FilteredList(status: Boolean, priority: Int)
 
 class ToDoItemsActor extends Actor with TodoActions {
 
@@ -32,6 +33,9 @@ class ToDoItemsActor extends Actor with TodoActions {
 
     case DeleteItem(itemId) =>
        deleteItem(itemId)
+
+    case FilteredList(status,priority) =>
+       sender ! filterItems(status,priority)
   }
 }
 
@@ -40,6 +44,17 @@ import slick.driver.MySQLDriver.api._
 import DatabaseCfg._
 
 trait TodoActions {
+
+  def filterItems(status: Boolean, priority:Int ): List[MyToDoItem] = {
+
+    var res = for {
+      it <- items if (it.isDone === status && it.priority === priority)
+    } yield (it)
+
+    var resp = db.run(res.result)
+    var out = Await.result(resp,3 seconds)
+    out.toList
+  }
 
   def deleteById(itemId: Rep[Long]) = {
     items.filter(_.id === itemId)
@@ -86,7 +101,6 @@ trait TodoActions {
 
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    var result:List[MyToDoItem] = List()
     var res = for {
       it <- items
     } yield (it)
@@ -105,10 +119,8 @@ p.foreach { s =>
 }
 */
 
-var resp = db.run(res.result)
-
-var out = Await.result(resp,3 seconds)
-    println("outside:")
+    var resp = db.run(res.result)
+    var out = Await.result(resp,3 seconds)
     out.toList
 
   }
