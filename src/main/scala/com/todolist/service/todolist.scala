@@ -4,7 +4,7 @@ import akka.actor.Actor
 import com.todolist.core.DatabaseCfg
 import com.todolist.domain.MyToDoItem
 
-import scala.concurrent.Await
+import scala.concurrent.{Future, Promise, Await}
 
 
 /**
@@ -45,15 +45,17 @@ import DatabaseCfg._
 
 trait TodoActions {
 
-  def filterItems(status: Boolean, priority:Int ): List[MyToDoItem] = {
+  def filterItems(status: Boolean, priority:Int ): Future[Vector[MyToDoItem]] = {
 
     var res = for {
       it <- items if (it.isDone === status && it.priority === priority)
     } yield (it)
 
     var resp = db.run(res.result)
-    var out = Await.result(resp,3 seconds)
-    out.toList
+
+    resp.asInstanceOf[Promise[Vector[MyToDoItem]]].future
+    //var out = Await.result(resp,3 seconds)
+    //out.toList
   }
 
   def deleteById(itemId: Rep[Long]) = {
@@ -86,51 +88,30 @@ trait TodoActions {
 
   val markItemAsDoneCompiled = Compiled(markItemAsDone _)
 
-  def markItemDone(itemId: Long, state: Boolean): MyToDoItem = {
+  def markItemDone(itemId: Long, state: Boolean): Future[Vector[MyToDoItem]] = {
 
     val markDone = markItemAsDone(itemId).update(state)
 
     var resp = db.run(markDone)
-    var out = Await.result(resp,3 seconds)
     val itemToUpdate = findItemByIdCompiled(itemId).result
-    val outItem = Await.result(db.run(itemToUpdate), 3 seconds).asInstanceOf[Vector[MyToDoItem]].head.asInstanceOf[MyToDoItem]
-    outItem
-
+    val outItem = db.run(itemToUpdate)
+    outItem.asInstanceOf[Promise[Vector[MyToDoItem]]].future
   }
-  def getToDoItems(): List[MyToDoItem] = {
-
-    import scala.concurrent.ExecutionContext.Implicits.global
+  def getToDoItems(): Future[Vector[MyToDoItem]] = {
 
     var res = for {
       it <- items
     } yield (it)
 
-    /*
-
-import slick.backend.DatabasePublisher
-val a = res.result
-val p: DatabasePublisher[MyToDoItem] = db.stream(a)
-
-var out:List[MyToDoItem] = List()
-
-p.foreach { s =>
-  println("inside:"+s)
-  out = out :+ s
-}
-*/
-
     var resp = db.run(res.result)
-    var out = Await.result(resp,3 seconds)
-    out.toList
-
+    resp.asInstanceOf[Promise[Vector[MyToDoItem]]].future
   }
 
-  def createTodoItem(todoitem: MyToDoItem): MyToDoItem = {
+  def createTodoItem(todoitem: MyToDoItem): Future[MyToDoItem] = {
 
     val res = db.run(
       (items returning items.map(_.id) into ((item,id) => item.copy(id=id))) += todoitem
     )
-    val itemWithId = Await.result(res,3 seconds).asInstanceOf[MyToDoItem]
-    itemWithId
+    res.asInstanceOf[Promise[MyToDoItem]].future
   }
 }

@@ -8,7 +8,7 @@ import com.todolist.service._
 import spray.http.StatusCodes
 import spray.routing.HttpService
 import akka.pattern.ask
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 
 /**
@@ -47,7 +47,11 @@ trait MyService extends HttpService {
       post {
         respondWithStatus(StatusCodes.Created) {
           handleWith { myToDoItem: MyToDoItem =>
-            (todoList ? CreateTodoItem(myToDoItem)).mapTo[MyToDoItem]
+            val res = (todoList ? CreateTodoItem(myToDoItem))
+
+            for {
+               item <- res
+            } yield item.asInstanceOf[Future[MyToDoItem]]
           }
         }
       }
@@ -55,7 +59,10 @@ trait MyService extends HttpService {
       path("todolist" / "list") {
         get {
           complete {
-            (todoList ? GetToDoItems).mapTo[List[MyToDoItem]]
+            val res = (todoList ? GetToDoItems)
+             for {
+              items <- res
+            } yield items.asInstanceOf[Future[Vector[MyToDoItem]]]
           }
         }
       } ~
@@ -64,7 +71,10 @@ trait MyService extends HttpService {
           respondWithStatus(StatusCodes.Accepted) {
             complete {
               val markDone = MarkDone(itemId, true)
-              (todoList ? markDone).mapTo[MyToDoItem]
+              val res = (todoList ? markDone)
+              for {
+                items <- res
+              } yield items.asInstanceOf[Future[Vector[MyToDoItem]]]
             }
           }
         }
@@ -75,7 +85,10 @@ trait MyService extends HttpService {
           respondWithStatus(StatusCodes.Accepted) {
             complete {
               val markDone = MarkDone(itemId, false)
-              (todoList ? markDone).mapTo[MyToDoItem]
+              val res = (todoList ? markDone)
+              for {
+                items <- res
+              } yield items.asInstanceOf[Future[Vector[MyToDoItem]]]
             }
           }
         }
@@ -100,7 +113,10 @@ trait MyService extends HttpService {
             validate(prt <= 5 && prt >= 1, s"Priority has to be greater than 1 and less than 5") {
               val filteredList = FilteredList(st, prt)
               complete {
-                (todoList ? filteredList).mapTo[List[MyToDoItem]]
+                val res = (todoList ? filteredList)
+                for {
+                  items <- res
+                } yield items.asInstanceOf[Future[Vector[MyToDoItem]]]
               }
             }
 
